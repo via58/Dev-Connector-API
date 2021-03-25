@@ -8,8 +8,8 @@ module.exports = function (req, res, next) {
   }
   try {
     let decoded = jwt.verify(token, config.get("jwtSecret"));
-    req.user = decoded.id;
-    //console.log(decoded);
+    req.user = decoded.user;
+    console.log(decoded);
     // console.log(req);
 
     next();
