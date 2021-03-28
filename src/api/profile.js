@@ -20,10 +20,6 @@ router.get("/me", [AuthMiddleware], async (req, res) => {
   }
 });
 
-//@method get all profiles
-//@access Public
-//@desc   get all profile datas
-
 //@method POST   profiles
 //@access private
 //@desc   post and update  all profile and users
@@ -99,4 +95,24 @@ router.post(
   }
 );
 
+//@method get all profiles
+//@access Public
+//@desc   get all profile datas
+
+router.get("/", async (req, res) => {
+  try {
+    const profiles = await ProfileModel.find().populate("user", [
+      "name",
+      "avatar"
+    ]);
+
+    if (profiles.length === 0) {
+      return res.status(404).json({ msg: "Profile not found" });
+    }
+    res.json(profiles);
+  } catch (err) {
+    console.log(err.message);
+    res.status(500).json({ msg: "Server Error" });
+  }
+});
 module.exports = router;
