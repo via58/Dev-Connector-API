@@ -134,4 +134,65 @@ router.put("/unlike/:id", [AuthMiddleware], async (req, res) => {
     res.status(500).json("Server Error");
   }
 });
+
+//@method PUT   api/posts/comment/id
+//@access private
+//@desc   comment the  post
+router.put(
+  "/comment/:id",
+  [AuthMiddleware, [check("text", "comment is required").not().isEmpty()]],
+  async (req, res) => {
+    try {
+      const post = await PostModel.findById(req.params.id);
+      const user = await UserModel.findById(req.user).select("-password");
+      if (!post) {
+        return res.status(404).json({ msg: "Post not found" });
+      }
+      const newComment = {
+        user: req.user,
+        text: req.body.text,
+        avatar: user.avatar
+      };
+      post.comments.unshift(newComment);
+      await post.save();
+      res.json(post.comments);
+    } catch (err) {
+      console.log(err.message);
+      res.status(500).json("Server Error");
+    }
+  }
+);
+
+//@method PUT   api/posts/comment/id/comment_id
+//@access private
+//@desc   delete the comment
+router.put("/comment/:id/:comment_id", [AuthMiddleware], async (req, res) => {
+  try {
+    // get Post
+    const post = await PostModel.findById(req.params.id);
+
+    // get comment
+    const comment = post.comments.find(
+      (comment) => comment.id === req.params.comment_id
+    );
+    if (!comment) {
+      return res.status(404).json({ msg: "Comment not found" });
+    }
+    // check user
+    if (comment.user.toString() !== req.user) {
+      return res.status(404).json({ msg: "Not authorized to delete" });
+    }
+    const removeIndex = post.comments
+      .map((comment) => comment.user.toString())
+      .indexOf(req.user);
+
+    post.comments.splice(removeIndex, 1);
+    await post.save();
+    res.json(post.comments);
+  } catch (err) {
+    console.log(err.message);
+    res.status(500).json("Server Error");
+  }
+});
+
 module.exports = router;
