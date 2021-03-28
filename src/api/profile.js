@@ -4,6 +4,8 @@ const AuthMiddleware = require("../../middleware/Auth");
 const { check, validationResult } = require("express-validator");
 const ProfileModel = require("../models/Profile");
 const User = require("../models/User");
+const request = require("request");
+const config = require("config");
 
 router.get("/me", [AuthMiddleware], async (req, res) => {
   try {
@@ -295,7 +297,7 @@ router.put(
   }
 );
 
-//@method delete  profiles Education by experience id
+//@method delete  api/profile/education
 //@access private
 //@desc   delete  profiles Education by experience id
 
@@ -313,6 +315,37 @@ router.delete("/education/:edu_id", AuthMiddleware, async (req, res) => {
     profile.education.splice(removeIndex, 1);
     await profile.save();
     res.json(profile);
+  } catch (err) {
+    console.log(err.message);
+    res.status(500).send(" Server Error");
+  }
+});
+
+//@method GET  api/github/:github_username
+//@access public
+//@desc   get github repo names
+
+router.get("/github/:user_name", async (req, res) => {
+  try {
+    let options = {
+      uri: `https://api.github.com/users/${
+        req.params.user_name
+      }/repos?per_page=5&sort=created:asc
+     &client_id=${config.get("gitHubClient_id")}&client_secret=${config.get(
+        "client_secret"
+      )}`,
+      method: "GET",
+      headers: { "user-agent": "node.js" }
+    };
+    request(options, (error, response, body) => {
+      if (error) {
+        throw error;
+      }
+      if (response.statusCode !== 200) {
+        return res.status(404).json({ msg: " Github user profile not found" });
+      }
+      res.json(JSON.parse(body));
+    });
   } catch (err) {
     console.log(err.message);
     res.status(500).send(" Server Error");
